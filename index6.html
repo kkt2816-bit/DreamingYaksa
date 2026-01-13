@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>무료 건강 체크</title>
+  <style>
+    :root { --bg:#0b0f19; --card:#111827; --muted:#9ca3af; --text:#e5e7eb; --accent:#22c55e; --accent2:#60a5fa; --danger:#f87171; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", Arial, sans-serif; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 22px 16px 60px; }
+    .card { background: var(--card); border: 1px solid #263042; border-radius: 16px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    h2 { margin: 0 0 10px; font-size: 18px; }
+    p { margin: 8px 0; color: var(--muted); line-height: 1.55; }
+    label { display:block; font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+    input, select, textarea {
+      width: 100%; padding: 12px 12px; border-radius: 12px;
+      border: 1px solid #2b364b; background: rgba(3,7,18,0.35); color: var(--text); outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: rgba(34,197,94,.7); box-shadow: 0 0 0 4px rgba(34,197,94,.12); }
+
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 760px){ .grid2 { grid-template-columns: 1fr; } }
+
+    .btn {
+      border: 1px solid #2b364b; background: rgba(17,24,39,0.65); color: var(--text);
+      padding: 12px 14px; border-radius: 12px; cursor: pointer; font-weight: 800;
+      text-decoration:none; display:inline-flex; justify-content:center; align-items:center; text-align:center;
+    }
+    .btn.primary { border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.12); }
+    .btn.primary:hover { background: rgba(34,197,94,.18); }
+    .btn.secondary { border-color: rgba(96,165,250,.55); background: rgba(96,165,250,.12); }
+    .btn.secondary:hover { background: rgba(96,165,250,.18); }
+    .btn.ghost { background: transparent; color: var(--muted); }
+    .btn.small { padding: 9px 10px; font-size: 12px; border-radius: 10px; }
+
+    .nav { display:flex; gap:10px; justify-content: space-between; align-items:center; flex-wrap: wrap; margin-top: 14px; }
+    .right { margin-left:auto; display:flex; gap:10px; }
+
+    .q { border: 1px solid #263042; border-radius: 14px; padding: 12px; background: rgba(3,7,18,0.25); }
+    .q-title { font-size: 15px; margin: 0 0 10px; line-height: 1.45; }
+    .yn { display:flex; gap:10px; }
+    .yn .btn { flex: 1; }
+    .selected-yes { border-color: rgba(34,197,94,.85) !important; background: rgba(34,197,94,.22) !important; }
+    .selected-no  { border-color: rgba(156,163,175,.55) !important; background: rgba(156,163,175,.12) !important; color:#d1d5db !important; }
+
+    .error { color: var(--danger); font-size: 13px; margin-top: 8px; display:none; }
+    .hint { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+    .divider { height: 1px; background: #263042; margin: 14px 0; }
+    .result-box { border: 1px solid #263042; border-radius: 14px; padding: 14px; background: rgba(3,7,18,0.25); }
+    .result-title { font-size: 18px; font-weight: 900; margin:0 0 8px; }
+    .tag { display:inline-flex; gap:8px; align-items:center; font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid #2b364b; color:#d1d5db; margin: 6px 6px 0 0; }
+    .tag strong { color: var(--text); }
+
+    .cta { display:grid; gap: 10px; margin-top: 14px; }
+    textarea.copybox { min-height: 120px; resize: vertical; }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <!-- STEP 1 -->
+  <div class="card" id="screenInfo">
+    <h1>무료 건강 체크</h1>
+    <p>아래 정보를 입력한 뒤 체크를 진행해주세요. (결과는 참고용)</p>
+
+    <div class="grid2">
+      <div>
+        <label for="name">성함 (필수)</label>
+        <input id="name" type="text" placeholder="예: 홍길동" autocomplete="name" />
+        <div class="error" id="errName">성함을 입력해주세요.</div>
+      </div>
+      <div>
+        <label for="phone">연락처 (필수)</label>
+        <input id="phone" type="tel" placeholder="예: 01012345678" autocomplete="tel" />
+        <div class="error" id="errPhone">연락처를 정확히 입력해주세요. (숫자만)</div>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:12px;">
+      <div>
+        <label for="gender">성별 (선택)</label>
+        <select id="gender">
+          <option value="">선택 안 함</option>
+          <option value="남">남</option>
+          <option value="여">여</option>
+          <option value="기타/응답안함">기타/응답안함</option>
+        </select>
+      </div>
+      <div>
+        <label for="age">나이대 (선택)</label>
+        <select id="age">
+          <option value="">선택 안 함</option>
+          <option value="20대">20대</option>
+          <option value="30대">30대</option>
+          <option value="40대">40대</option>
+          <option value="50대">50대</option>
+          <option value="60대 이상">60대 이상</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div></div>
+      <div class="right">
+        <button class="btn primary" id="startBtn">체크 시작</button>
+      </div>
+    </div>
+
+    <p class="hint">※ 입력 정보는 상담 연결 및 결과 저장 목적으로 사용됩니다.</p>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card" id="screenQuestions" style="display:none;">
+    <h2>체크 문항 (예/아니오)</h2>
+    <p class="hint">최근 2–4주 기준으로 답해주세요.</p>
+
+    <div id="qList" style="display:grid; gap:12px;"></div>
+    <div class="error" id="errUnanswered">답하지 않은 문항이 있습니다. 모두 선택해주세요.</div>
+
+    <div class="nav">
+      <button class="btn ghost" id="backBtn">← 이전</button>
+      <div class="right">
+        <button class="btn primary" id="resultBtn">결과 보기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="card" id="screenResult" style="display:none;">
+    <h1>결과</h1>
+    <p>이 결과는 진단이 아니라, 현재 상태를 이해하기 위한 참고 자료입니다.</p>
+
+    <div class="result-box">
+      <div class="result-title" id="mainTypeTitle">현재 불편의 중심: -</div>
+      <div id="layerTags"></div>
+      <div class="divider"></div>
+      <div id="layerDetails"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="result-box">
+      <h2 style="margin:0 0 6px;">상담 안내</h2>
+      <p style="margin-top:0;">
+        체크 결과를 함께 보면서, 지금 상태에 맞는 방향을 정리해드릴게요.
+      </p>
+      <p class="hint" style="margin-top:8px;">
+        ✅ 전화 상담(약 20분) · 월/화/목/금 <b>저녁</b> 8–10시 · 무료
+      </p>
+
+      <div class="divider"></div>
+
+      <label for="copyText">상담 요청 시 아래 내용을 복사해서 카톡(또는 문자)에 붙여넣어 주세요</label>
+      <textarea id="copyText" class="copybox" readonly></textarea>
+
+      <div class="nav">
+        <div style="display:flex; gap:10px;">
+          <button class="btn small secondary" id="copyBtn">복사하기</button>
+          <button class="btn small ghost" id="restartBtn">처음부터 다시</button>
+        </div>
+      </div>
+
+      <div class="cta">
+        <a class="btn primary" id="kakaoBtn" href="https://pf.kakao.com/_xalLwG/chat" target="_blank" rel="noopener">
+          카카오톡으로 상담 신청하기
+        </a>
+        <a class="btn secondary" id="smsBtn" href="sms:01024885195?body=상담요청">
+          문자로 “상담요청” 보내기
+        </a>
+        <div class="hint">
+          ※ PC에서는 ‘문자 보내기’가 작동하지 않을 수 있어요.<br/>
+          그럴 때는 <b>010-2488-5195</b>로 “상담요청” 문자 주세요.
+        </div>
+      </div>
+    </div>
+
+    <p class="hint" id="saveHint" style="margin-top:12px;"></p>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  // ✅ 구글시트 웹앱 URL
+  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycby1inKa5TkO0dgk2LPrUR9ouzO6ft4shqWrMX1I4deJPEmDFRo89ZI9dFqWV21HBx7g/exec";
+
+  // DOM
+  const screenInfo = document.getElementById("screenInfo");
+  const screenQuestions = document.getElementById("screenQuestions");
+  const screenResult = document.getElementById("screenResult");
+
+  const nameEl = document.getElementById("name");
+  const phoneEl = document.getElementById("phone");
+  const genderEl = document.getElementById("gender");
+  const ageEl = document.getElementById("age");
+  const errName = document.getElementById("errName");
+  const errPhone = document.getElementById("errPhone");
+
+  const startBtn = document.getElementById("startBtn");
+  const backBtn = document.getElementById("backBtn");
+  const resultBtn = document.getElementById("resultBtn");
+
+  const qList = document.getElementById("qList");
+  const errUnanswered = document.getElementById("errUnanswered");
+
+  const mainTypeTitle = document.getElementById("mainTypeTitle");
+  const layerTags = document.getElementById("layerTags");
+  const layerDetails = document.getElementById("layerDetails");
+
+  const copyText = document.getElementById("copyText");
+  const copyBtn = document.getElementById("copyBtn");
+  const restartBtn = document.getElementById("restartBtn");
+  const saveHint = document.getElementById("saveHint");
+
+  // 상태
+  const answers = new Map(); // id -> true/false
+  let userInfo = {};
+
+  function show(which){
+    screenInfo.style.display = "none";
+    screenQuestions.style.display = "none";
+    screenResult.style.display = "none";
+    which.style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function onlyDigits(str){ return (str || "").replace(/\D/g, ""); }
+
+  function validateInfo(){
+    const name = (nameEl.value || "").trim();
+    const phoneRaw = onlyDigits(phoneEl.value);
+
+    let ok = true;
+
+    if(!name){ errName.style.display = "block"; ok = false; }
+    else errName.style.display = "none";
+
+    const validPhone = phoneRaw.length >= 10 && phoneRaw.length <= 11;
+    if(!validPhone){ errPhone.style.display = "block"; ok = false; }
+    else errPhone.style.display = "none";
+
+    if(ok){
+      userInfo = {
+        name,
+        phone: phoneRaw,
+        gender: genderEl.value || "",
+        age: ageEl.value || ""
+      };
+    }
+    return ok;
+  }
+
+  // 질문(타입8 + 레이어16 = 24)
+  const questions = [
+    // 타입
+    { id:"T1", text:"배변이 매일 일정하지 않거나, 변비·설사가 반복되는 편인가요?", typeKey:"B" },
+    { id:"T2", text:"화장실을 다녀와도 개운하지 않거나, 잔변감이 자주 있나요?", typeKey:"B" },
+    { id:"T3", text:"가스·복부 팽만 때문에 불편함을 느끼는 날이 자주 있나요?", typeKey:"B" },
+
+    { id:"T4", text:"조금만 먹어도 더부룩하거나, 체한 느낌이 오래 가는 편인가요?", typeKey:"A" },
+    { id:"T5", text:"식사 직후에 가장 불편하고, 시간이 지나면 상대적으로 나아지나요?", typeKey:"A" },
+    { id:"T6", text:"공복에는 괜찮은데, 식사 후에 속 불편감이 반복되나요?", typeKey:"A" },
+
+    { id:"T7", text:"스트레스를 받거나 긴장하면, 장이나 위 증상이 바로 영향을 받나요?", typeKey:"C" },
+    { id:"T8", text:"중요한 일정이나 외출 전, 화장실이나 속 상태가 유난히 신경 쓰이나요?", typeKey:"C" },
+
+    // 레이어 L1 장내환경
+    { id:"L1_1", text:"유산균을 먹을 때는 괜찮다가, 중단하면 다시 불편해지는 편인가요?", layerKey:"L1" },
+    { id:"L1_2", text:"변비·설사·가스 중 한 가지만 지속되기보다, 상황에 따라 양상이 바뀌나요?", layerKey:"L1" },
+    { id:"L1_3", text:"항생제 복용 이후부터 장 불편이 눈에 띄게 늘었다고 느끼시나요?", layerKey:"L1" },
+    { id:"L1_4", text:"특정 음식 때문이라기보다, 전반적으로 장 상태가 들쑥날쑥한 느낌이 있나요?", layerKey:"L1" },
+
+    // 레이어 L2 리듬/스트레스 (겹침 해결 버전)
+    { id:"L2_1", text:"평소 어깨·목이 자주 뭉치거나, 턱에 힘이 들어가는 편인가요?", layerKey:"L2" },
+    { id:"L2_2", text:"수면 시간이 줄거나 수면 질이 나쁜 날, 소화 상태가 바로 영향을 받나요?", layerKey:"L2" },
+    { id:"L2_3", text:"긴장하면 배가 ‘꼬르륵’ 하거나, 갑자기 화장실이 급해지는 편인가요?", layerKey:"L2" },
+    { id:"L2_4", text:"주말이나 휴식기엔 비교적 낫고, 일상 리듬이 바쁠수록 불편해지나요?", layerKey:"L2" },
+
+    // 레이어 L3 혈부족/산소
+    { id:"L3_1", text:"조금만 움직이거나 식사 후에 쉽게 숨이 차거나 기운이 떨어지나요?", layerKey:"L3" },
+    { id:"L3_2", text:"손발이 자주 차거나, 혈액순환이 잘 안 되는 느낌이 있나요?", layerKey:"L3" },
+    { id:"L3_3", text:"식사량이나 영양 섭취는 적지 않은데, 에너지가 잘 차오르지 않나요?", layerKey:"L3" },
+    { id:"L3_4", text:"어지럼·멍함·집중력 저하가 함께 느껴지는 편인가요?", layerKey:"L3" },
+
+    // 레이어 L4 만성염증/회복저하 (24번 명확화 포함)
+    { id:"L4_1", text:"몸이 예전보다 쉽게 붓거나, 묵직하고 무거운 느낌이 자주 드나요?", layerKey:"L4" },
+    { id:"L4_2", text:"충분히 쉬어도 몸이 개운해지지 않고, 피로가 기본 상태처럼 느껴지나요?", layerKey:"L4" },
+    { id:"L4_3", text:"특정 한 부위만이 아니라, 불편함이 여기저기 옮겨 다니는 느낌이 있나요?", layerKey:"L4" },
+    { id:"L4_4", text:"최근 1~3개월 동안 ‘소화/배변/피로’ 같은 불편이 완전히 사라진 기간이 거의 없었나요?", layerKey:"L4" },
+  ];
+
+  const layerCopy = {
+    L1: { name:"장내 환경", oneLine:"장내 환경의 균형이 흔들리며 증상이 반복되는 경향이 보입니다." },
+    L2: { name:"리듬/스트레스", oneLine:"생활 리듬·긴장도에 따라 소화 상태가 민감하게 흔들리는 편입니다." },
+    L3: { name:"혈부족/산소", oneLine:"에너지가 잘 차오르지 않고, 전신 컨디션이 소화에도 영향을 줄 수 있습니다." },
+    L4: { name:"만성 염증", oneLine:"몸이 회복 모드로 완전히 돌아오지 못하고 불편이 이어지는 경향이 보입니다." },
+  };
+
+  function renderQuestions(){
+    qList.innerHTML = "";
+    questions.forEach((q, idx) => {
+      const box = document.createElement("div");
+      box.className = "q";
+
+      const title = document.createElement("div");
+      title.className = "q-title";
+      title.textContent = `${idx+1}. ${q.text}`;
+
+      const row = document.createElement("div");
+      row.className = "yn";
+
+      const yesBtn = document.createElement("button");
+      yesBtn.className = "btn";
+      yesBtn.type = "button";
+      yesBtn.textContent = "예";
+
+      const noBtn = document.createElement("button");
+      noBtn.className = "btn";
+      noBtn.type = "button";
+      noBtn.textContent = "아니오";
+
+      function paint(){
+        yesBtn.classList.remove("selected-yes");
+        noBtn.classList.remove("selected-no");
+        const v = answers.get(q.id);
+        if(v === true) yesBtn.classList.add("selected-yes");
+        if(v === false) noBtn.classList.add("selected-no");
+      }
+
+      yesBtn.addEventListener("click", () => { answers.set(q.id, true); paint(); });
+      noBtn.addEventListener("click", () => { answers.set(q.id, false); paint(); });
+
+      row.appendChild(yesBtn);
+      row.appendChild(noBtn);
+      box.appendChild(title);
+      box.appendChild(row);
+      qList.appendChild(box);
+
+      paint();
+    });
+  }
+
+  function allAnswered(){
+    return questions.every(q => answers.has(q.id));
+  }
+
+  function score(){
+    const type = { A:0, B:0, C:0 };
+    const layer = { L1:0, L2:0, L3:0, L4:0 };
+
+    questions.forEach(q => {
+      const v = answers.get(q.id) === true;
+      if(!v) return;
+      if(q.typeKey) type[q.typeKey] += 1;
+      if(q.layerKey) layer[q.layerKey] += 1;
+    });
+
+    return { type, layer };
+  }
+
+  function pickMainType(typeScores){
+    const entries = Object.entries(typeScores).sort((a,b)=>b[1]-a[1]);
+    const max = entries[0][1];
+    const top = entries.filter(e=>e[1]===max).map(e=>e[0]);
+
+    const label = k => ({ A:"위 문제 타입", B:"장 문제 타입", C:"신경성 타입" }[k]);
+
+    if(max === 0) return { title:"혼합형 경향", topKeys: top };
+    if(top.length === 1) return { title: label(top[0]), topKeys: top };
+    return { title: "혼합형 경향", topKeys: top };
+  }
+
+  function pickLayers(layerScores){
+    const entries = Object.entries(layerScores).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
+    const strong = entries.filter(x=>x.v>=3);
+    if(strong.length>=2) return strong.slice(0,2);
+    if(strong.length===1) return strong;
+    const mid = entries.filter(x=>x.v===2);
+    if(mid.length>=1) return [mid[0]];
+    return [];
+  }
+
+  async function submitToWebhook(payload){
+    if(!WEBHOOK_URL) return;
+
+    try{
+      // ✅ CORS preflight 피하기: no-cors + text/plain
+      await fetch(WEBHOOK_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      saveHint.textContent = "✅ 응답이 전송되었습니다. (구글시트에 저장되었는지 확인해주세요)";
+    } catch(e){
+      saveHint.textContent = "⚠️ 저장에 실패했습니다. (네트워크/권한 문제)";
+    }
+  }
+
+  function buildResult(){
+    const { type, layer } = score();
+    const main = pickMainType(type);
+    const showLayers = pickLayers(layer);
+
+    mainTypeTitle.textContent = `현재 불편의 중심: ${main.title}`;
+
+    layerTags.innerHTML = "";
+    layerDetails.innerHTML = "";
+
+    if(showLayers.length){
+      showLayers.forEach(x => {
+        const t = document.createElement("div");
+        t.className = "tag";
+        t.innerHTML = `<strong>${layerCopy[x.k].name}</strong> · ${x.v}/4`;
+        layerTags.appendChild(t);
+
+        const d = document.createElement("div");
+        d.style.marginBottom = "10px";
+        d.innerHTML = `
+          <div style="font-weight:900; margin-bottom:6px;">추가 확인(참고): ${layerCopy[x.k].name}</div>
+          <div style="color:#e5e7eb; margin-bottom:6px;">${layerCopy[x.k].oneLine}</div>
+          <div class="hint">→ “내가 이런 상태일 수 있겠구나” 하고 인식되는 부분이 있다면, 상담에서 우선순위를 함께 정리해드릴게요.</div>
+        `;
+        layerDetails.appendChild(d);
+      });
+    } else {
+      const t = document.createElement("div");
+      t.className = "tag";
+      t.innerHTML = `<strong>추가 확인</strong> · 복합 가능성`;
+      layerTags.appendChild(t);
+
+      layerDetails.innerHTML = `<div class="hint">뚜렷하게 한 레이어가 강하게 드러나지 않습니다. 생활리듬/식사패턴/복용약/검사력까지 같이 보면 방향이 더 선명해집니다.</div>`;
+    }
+
+    const strongLayerNames = showLayers.map(x => `${layerCopy[x.k].name}(${x.v}/4)`).join(", ") || "뚜렷한 단일 레이어 없음";
+    const resultSummary = `${main.title} / 레이어: ${strongLayerNames}`;
+
+    copyText.value =
+`[무료 체크 결과 기반 상담 요청]
+(카톡 또는 문자로 아래 내용을 보내주세요)
+1) 성함: ${userInfo.name}
+2) 연락처: ${userInfo.phone}
+3) 결과 요약: ${resultSummary}
+4) 가장 불편한 증상 1가지: (예: 변비/가스/더부룩/속쓰림 등)
+5) 통화 가능 요일/시간: (예: 월/화/목/금 저녁 8~10시 중 가능 시간)`;
+
+    // 저장 payload
+    const payload = {
+      ts: new Date().toISOString(),
+      user: userInfo,
+      scores: { type, layer },
+      mainType: main,
+      shownLayers: showLayers
+    };
+    submitToWebhook(payload);
+  }
+
+  // 이벤트
+  startBtn.addEventListener("click", () => {
+    if(!validateInfo()) return;
+    errUnanswered.style.display = "none";
+    renderQuestions();
+    show(screenQuestions);
+  });
+
+  backBtn.addEventListener("click", () => {
+    show(screenInfo);
+  });
+
+  resultBtn.addEventListener("click", () => {
+    if(!allAnswered()){
+      errUnanswered.style.display = "block";
+      return;
+    }
+    errUnanswered.style.display = "none";
+    saveHint.textContent = "";
+    buildResult();
+    show(screenResult);
+  });
+
+  copyBtn.addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(copyText.value);
+      copyBtn.textContent = "복사됨!";
+      setTimeout(()=> copyBtn.textContent="복사하기", 1100);
+    } catch(e){
+      copyText.select();
+      document.execCommand("copy");
+      copyBtn.textContent = "복사됨!";
+      setTimeout(()=> copyBtn.textContent="복사하기", 1100);
+    }
+  });
+
+  restartBtn.addEventListener("click", () => {
+    answers.clear();
+    userInfo = {};
+    nameEl.value = "";
+    phoneEl.value = "";
+    genderEl.value = "";
+    ageEl.value = "";
+    errName.style.display = "none";
+    errPhone.style.display = "none";
+    saveHint.textContent = "";
+    show(screenInfo);
+  });
+
+  // 초기
+  show(screenInfo);
+})();
+</script>
+</body>
+</html>
