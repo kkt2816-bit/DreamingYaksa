@@ -49,13 +49,18 @@
     .hint { font-size: 12px; color: var(--muted); line-height: 1.55; }
 
     .divider { height: 1px; background: #263042; margin: 14px 0; }
+
     .result-box { border: 1px solid #263042; border-radius: 14px; padding: 14px; background: rgba(3,7,18,0.25); }
     .result-title { font-size: 18px; font-weight: 900; margin:0 0 8px; }
+
     .tag { display:inline-flex; gap:8px; align-items:center; font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid #2b364b; color:#d1d5db; margin: 6px 6px 0 0; }
     .tag strong { color: var(--text); }
 
     .cta { display:grid; gap: 10px; margin-top: 14px; }
     textarea.copybox { min-height: 120px; resize: vertical; }
+
+    .section-title { font-weight: 900; margin: 0 0 8px; }
+    .big { font-size: 16px; color: var(--text); line-height: 1.6; }
   </style>
 </head>
 
@@ -132,23 +137,56 @@
   <!-- STEP 3 -->
   <div class="card" id="screenResult" style="display:none;">
     <h1>결과</h1>
-    <p>이 결과는 진단이 아니라, 현재 상태를 이해하기 위한 참고 자료입니다.</p>
+    <p class="hint">이 결과는 진단이 아니라, 현재 상태를 이해하기 위한 참고 자료입니다.</p>
 
     <div class="result-box">
-      <div class="result-title" id="mainTypeTitle">현재 불편의 중심: -</div>
+      <div class="result-title" id="mainTypeTitle">내 상태 요약</div>
+
+      <!-- 설명 -->
+      <div id="typeExplain" class="big"></div>
+
+      <div class="divider"></div>
+
+      <!-- 점수 -->
+      <div class="section-title">📌 내 점수 한눈에 보기</div>
+      <div id="scoreSummary" class="hint" style="margin-top:6px;"></div>
+      <div id="scoreBars" style="display:grid; gap:10px; margin-top:10px;"></div>
+
+      <div class="divider"></div>
+
+      <!-- 공감 -->
+      <div class="section-title">🤝 공감</div>
+      <div id="typeEmpathy" class="big"></div>
+
+      <div class="divider"></div>
+
+      <!-- 궁금증 -->
+      <div class="section-title">❓ 궁금증</div>
+      <div id="typeCuriosity" class="big"></div>
+
+      <div class="divider"></div>
+
+      <!-- 레이어 -->
+      <div class="section-title">✅ 추가 확인(참고)</div>
+      <div class="hint" style="margin-top:6px;">아래는 “왜 이런 불편이 반복될 수 있는지”를 더 이해하기 위한 힌트예요.</div>
       <div id="layerTags"></div>
+
       <div class="divider"></div>
       <div id="layerDetails"></div>
     </div>
 
     <div class="divider"></div>
 
+    <!-- 상담 안내 + 버튼 -->
     <div class="result-box">
       <h2 style="margin:0 0 6px;">상담 안내</h2>
-      <p style="margin-top:0;">
-        체크 결과를 함께 보면서, 지금 상태에 맞는 방향을 정리해드릴게요.
-      </p>
-      <p class="hint" style="margin-top:8px;">
+
+      <div class="big" style="margin-top:6px;">
+        이 체크는 <b>방향을 잡기 위한 참고용</b>이에요.<br/>
+        몇 가지만 더 확인하면 <b>지금 내 상태에 맞는 순서</b>를 더 정확히 정리할 수 있어요.
+      </div>
+
+      <p class="hint" style="margin-top:10px;">
         ✅ 전화 상담(약 20분) · 월/화/목/금 <b>저녁</b> 8–10시 · 무료
       </p>
 
@@ -185,7 +223,6 @@
 
 <script>
 (() => {
-  // ✅ 구글시트 웹앱 URL
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycby1inKa5TkO0dgk2LPrUR9ouzO6ft4shqWrMX1I4deJPEmDFRo89ZI9dFqWV21HBx7g/exec";
 
   // DOM
@@ -208,6 +245,10 @@
   const errUnanswered = document.getElementById("errUnanswered");
 
   const mainTypeTitle = document.getElementById("mainTypeTitle");
+  const typeExplain = document.getElementById("typeExplain");
+  const typeEmpathy = document.getElementById("typeEmpathy");
+  const typeCuriosity = document.getElementById("typeCuriosity");
+
   const layerTags = document.getElementById("layerTags");
   const layerDetails = document.getElementById("layerDetails");
 
@@ -236,12 +277,12 @@
 
     let ok = true;
 
-    if(!name){ errName.style.display = "block"; ok = false; }
-    else errName.style.display = "none";
+    if(!name){ errName.style.display="block"; ok = false; }
+    else errName.style.display="none";
 
     const validPhone = phoneRaw.length >= 10 && phoneRaw.length <= 11;
-    if(!validPhone){ errPhone.style.display = "block"; ok = false; }
-    else errPhone.style.display = "none";
+    if(!validPhone){ errPhone.style.display="block"; ok = false; }
+    else errPhone.style.display="none";
 
     if(ok){
       userInfo = {
@@ -274,7 +315,7 @@
     { id:"L1_3", text:"항생제 복용 이후부터 장 불편이 눈에 띄게 늘었다고 느끼시나요?", layerKey:"L1" },
     { id:"L1_4", text:"특정 음식 때문이라기보다, 전반적으로 장 상태가 들쑥날쑥한 느낌이 있나요?", layerKey:"L1" },
 
-    // 레이어 L2 리듬/스트레스 (겹침 해결 버전)
+    // 레이어 L2 리듬/스트레스
     { id:"L2_1", text:"평소 어깨·목이 자주 뭉치거나, 턱에 힘이 들어가는 편인가요?", layerKey:"L2" },
     { id:"L2_2", text:"수면 시간이 줄거나 수면 질이 나쁜 날, 소화 상태가 바로 영향을 받나요?", layerKey:"L2" },
     { id:"L2_3", text:"긴장하면 배가 ‘꼬르륵’ 하거나, 갑자기 화장실이 급해지는 편인가요?", layerKey:"L2" },
@@ -286,18 +327,81 @@
     { id:"L3_3", text:"식사량이나 영양 섭취는 적지 않은데, 에너지가 잘 차오르지 않나요?", layerKey:"L3" },
     { id:"L3_4", text:"어지럼·멍함·집중력 저하가 함께 느껴지는 편인가요?", layerKey:"L3" },
 
-    // 레이어 L4 만성염증/회복저하 (24번 명확화 포함)
+    // 레이어 L4 회복 저하(만성염증/회복력 저하에 가까움)
     { id:"L4_1", text:"몸이 예전보다 쉽게 붓거나, 묵직하고 무거운 느낌이 자주 드나요?", layerKey:"L4" },
     { id:"L4_2", text:"충분히 쉬어도 몸이 개운해지지 않고, 피로가 기본 상태처럼 느껴지나요?", layerKey:"L4" },
     { id:"L4_3", text:"특정 한 부위만이 아니라, 불편함이 여기저기 옮겨 다니는 느낌이 있나요?", layerKey:"L4" },
     { id:"L4_4", text:"최근 1~3개월 동안 ‘소화/배변/피로’ 같은 불편이 완전히 사라진 기간이 거의 없었나요?", layerKey:"L4" },
   ];
 
-  const layerCopy = {
-    L1: { name:"장내 환경", oneLine:"장내 환경의 균형이 흔들리며 증상이 반복되는 경향이 보입니다." },
-    L2: { name:"리듬/스트레스", oneLine:"생활 리듬·긴장도에 따라 소화 상태가 민감하게 흔들리는 편입니다." },
-    L3: { name:"혈부족/산소", oneLine:"에너지가 잘 차오르지 않고, 전신 컨디션이 소화에도 영향을 줄 수 있습니다." },
-    L4: { name:"만성 염증", oneLine:"몸이 회복 모드로 완전히 돌아오지 못하고 불편이 이어지는 경향이 보입니다." },
+  // ✅ 타입 결과 문구(확장 버전)
+  const TYPE_COPY = {
+    A: {
+      title: "🅰 위 문제 타입",
+      explain:
+        "지금은 위가 음식을 처리하는 힘이 부족해 보이는 상태예요. 그래서 음식을 먹으면 바로 더부룩해지거나, 체한 느낌이 오래 남는 편이에요. 위가 지치면 음식이 아래로 내려가는 속도도 느려져서, 답답함이 더 크게 느껴질 수 있어요.",
+      empathy:
+        "“조금만 먹어도 속이 불편해요.” “밥 먹고 나면 아무것도 하기 싫어요.” 이런 느낌, 익숙하지 않으세요?",
+      curiosity:
+        "위가 약해진 이유는 사람마다 달라요. 단순히 소화만의 문제일 수도 있고, 몸 전체 컨디션이 먼저 떨어진 신호일 수도 있어요."
+    },
+
+    B: {
+      title: "🅱 장 문제 타입",
+      explain:
+        "장 기능이 매끄럽게 움직이지 않는 상태예요. 그래서 변비, 가스, 잔변감처럼 배가 늘 개운하지 않은 느낌이 반복돼요. 장이 느려지면 가스가 쉽게 차고, 배가 묵직해지면서 하루 컨디션까지 영향을 줄 수 있어요.",
+      empathy:
+        "“화장실을 다녀와도 시원하지 않아요.” “배에 가스가 자주 차요.” 이런 불편함이 계속되고 있지 않나요?",
+      curiosity:
+        "장이 불편한 이유는 한 가지로만 설명되기 어려워요. 장 속 환경, 생활 리듬, 몸의 회복 상태가 함께 영향을 주는 경우가 많아요."
+    },
+
+    C: {
+      title: "🅲 신경성 타입",
+      explain:
+        "몸이 항상 긴장 모드에 가까운 상태예요. 스트레스를 받거나 신경 쓰는 일이 있으면 배나 속부터 먼저 반응하는 편이에요. 이럴 땐 배 자체보다, 몸의 긴장과 리듬을 함께 풀어줘야 편해지는 경우가 많아요.",
+      empathy:
+        "“중요한 날만 되면 배가 더 불편해요.” “마음이 편하지 않으면 소화도 안 돼요.” 이런 경험, 한 번쯤 있으셨을 거예요.",
+      curiosity:
+        "이런 경우는 음식이나 장만의 문제가 아니라, 몸 전체가 쉬지 못하고 있다는 신호일 수 있어요."
+    },
+
+    MIX: {
+      title: "🔀 혼합형 경향",
+      explain:
+        "한 가지 이유만으로 설명되기보다는, 여러 가지 신호가 함께 섞여 있는 상태로 보여요. 그래서 어떤 날은 장이 문제처럼 느껴지고, 어떤 날은 위가 더 불편하거나, 스트레스가 더 크게 느껴질 수 있어요. 이런 경우는 뭘 더 많이 하기보다, 내 몸에 맞는 순서를 다시 잡는 게 더 빠르게 도움이 됩니다.",
+      empathy:
+        "이것저것 다 해봤는데, 그때뿐이었던 경험이 있지 않으신가요?",
+      curiosity:
+        "지금 내 몸에는 무엇부터 정리하는 게 맞을지, 순서를 다시 살펴볼 필요가 있어 보여요."
+    }
+  };
+
+  const LAYER_COPY = {
+    L1: {
+      name: "🌱 장내 환경",
+      short: "배 속 환경이 깔끔하지 않은 상태로 보여요.",
+      explain: "좋은 균과 나쁜 균의 균형이 맞지 않으면 장이 예민하게 반응할 수 있어요.",
+      empathy: "유산균을 먹을 땐 괜찮다가 끊으면 다시 불편해진 적 있지 않으세요?"
+    },
+    L2: {
+      name: "⏰ 생활 리듬/스트레스",
+      short: "몸이 생활 리듬에 많이 영향을 받는 상태예요.",
+      explain: "잠을 못 자거나 바쁜 날에는 배나 속이 바로 반응하는 편이에요.",
+      empathy: "평일엔 힘들고, 쉬는 날엔 조금 나아지는 느낌, 익숙하죠?"
+    },
+    L3: {
+      name: "🩸 기운/에너지 부족",
+      short: "몸에 기운이 충분히 차 있지 않은 상태예요.",
+      explain: "그래서 소화도 느려지고, 조금만 움직여도 쉽게 피곤해질 수 있어요.",
+      empathy: "“밥은 먹는데 기운이 안 나요.” 이런 말, 자주 하시지 않나요?"
+    },
+    L4: {
+      name: "🔥 회복이 느린 상태",
+      short: "몸이 쉬어도 잘 회복되지 않는 상태예요.",
+      explain: "잘 붓고, 무겁고, 항상 피곤한 느낌이 기본처럼 느껴질 수 있어요.",
+      empathy: "예전보다 회복이 느려졌다고 느끼신 적 있지 않으신가요?"
+    }
   };
 
   function renderQuestions(){
@@ -367,11 +471,12 @@
     const max = entries[0][1];
     const top = entries.filter(e=>e[1]===max).map(e=>e[0]);
 
-    const label = k => ({ A:"위 문제 타입", B:"장 문제 타입", C:"신경성 타입" }[k]);
-
-    if(max === 0) return { title:"혼합형 경향", topKeys: top };
-    if(top.length === 1) return { title: label(top[0]), topKeys: top };
-    return { title: "혼합형 경향", topKeys: top };
+    if(max === 0) return { key:"MIX", title: TYPE_COPY.MIX.title, topKeys: top };
+    if(top.length === 1) {
+      const k = top[0];
+      return { key:k, title: TYPE_COPY[k].title, topKeys: top };
+    }
+    return { key:"MIX", title: TYPE_COPY.MIX.title, topKeys: top };
   }
 
   function pickLayers(layerScores){
@@ -384,11 +489,49 @@
     return [];
   }
 
+  function renderScoreUI(typeScores){
+    // 타입 문항 수 고정: A=3, B=3, C=2
+    const maxType = { A:3, B:3, C:2 };
+    const typeLabel = {
+      A: "위 쪽(식후 더부룩/체함)",
+      B: "장 쪽(변비/가스/잔변감)",
+      C: "긴장 영향(스트레스/리듬)"
+    };
+
+    const sorted = Object.entries(typeScores).sort((a,b)=>b[1]-a[1]);
+    const topKey = sorted[0][0];
+    const secondKey = sorted[1][0];
+
+    document.getElementById("scoreSummary").textContent =
+      `가장 강한 쪽은 “${typeLabel[topKey]}”이고, 그다음은 “${typeLabel[secondKey]}” 쪽이에요.`;
+
+    const barsEl = document.getElementById("scoreBars");
+    barsEl.innerHTML = "";
+
+    function barRow(title, value, max){
+      const pct = Math.round((value / max) * 100);
+      const wrap = document.createElement("div");
+      wrap.innerHTML = `
+        <div style="display:flex; justify-content:space-between; gap:10px; margin-bottom:6px;">
+          <div style="font-weight:800;">${title}</div>
+          <div class="hint">${value}/${max}</div>
+        </div>
+        <div style="height:10px; border-radius:999px; background:#0b1220; border:1px solid #263042; overflow:hidden;">
+          <div style="height:100%; width:${pct}%; background:rgba(34,197,94,.65);"></div>
+        </div>
+      `;
+      barsEl.appendChild(wrap);
+    }
+
+    barRow(typeLabel.A, typeScores.A, maxType.A);
+    barRow(typeLabel.B, typeScores.B, maxType.B);
+    barRow(typeLabel.C, typeScores.C, maxType.C);
+  }
+
   async function submitToWebhook(payload){
     if(!WEBHOOK_URL) return;
 
     try{
-      // ✅ CORS preflight 피하기: no-cors + text/plain
       await fetch(WEBHOOK_URL, {
         method: "POST",
         mode: "no-cors",
@@ -406,24 +549,35 @@
     const main = pickMainType(type);
     const showLayers = pickLayers(layer);
 
-    mainTypeTitle.textContent = `현재 불편의 중심: ${main.title}`;
+    // 점수 UI
+    renderScoreUI(type);
 
+    // 타입 결과(설명/공감/궁금증)
+    const copy = TYPE_COPY[main.key] || TYPE_COPY.MIX;
+    mainTypeTitle.textContent = `내 상태 요약: ${copy.title}`;
+    typeExplain.textContent = copy.explain;
+    typeEmpathy.textContent = copy.empathy;
+    typeCuriosity.textContent = copy.curiosity;
+
+    // 레이어 태그 + 쉬운 설명
     layerTags.innerHTML = "";
     layerDetails.innerHTML = "";
 
     if(showLayers.length){
       showLayers.forEach(x => {
+        const meta = LAYER_COPY[x.k];
         const t = document.createElement("div");
         t.className = "tag";
-        t.innerHTML = `<strong>${layerCopy[x.k].name}</strong> · ${x.v}/4`;
+        t.innerHTML = `<strong>${meta.name}</strong> · ${x.v}/4`;
         layerTags.appendChild(t);
 
         const d = document.createElement("div");
-        d.style.marginBottom = "10px";
+        d.style.marginBottom = "12px";
         d.innerHTML = `
-          <div style="font-weight:900; margin-bottom:6px;">추가 확인(참고): ${layerCopy[x.k].name}</div>
-          <div style="color:#e5e7eb; margin-bottom:6px;">${layerCopy[x.k].oneLine}</div>
-          <div class="hint">→ “내가 이런 상태일 수 있겠구나” 하고 인식되는 부분이 있다면, 상담에서 우선순위를 함께 정리해드릴게요.</div>
+          <div style="font-weight:900; margin-bottom:6px;">${meta.name}</div>
+          <div style="color:#e5e7eb; margin-bottom:6px;">${meta.short}</div>
+          <div class="hint" style="margin-bottom:6px;">${meta.explain}</div>
+          <div class="hint">🤝 ${meta.empathy}</div>
         `;
         layerDetails.appendChild(d);
       });
@@ -432,12 +586,13 @@
       t.className = "tag";
       t.innerHTML = `<strong>추가 확인</strong> · 복합 가능성`;
       layerTags.appendChild(t);
-
-      layerDetails.innerHTML = `<div class="hint">뚜렷하게 한 레이어가 강하게 드러나지 않습니다. 생활리듬/식사패턴/복용약/검사력까지 같이 보면 방향이 더 선명해집니다.</div>`;
+      layerDetails.innerHTML = `<div class="hint">뚜렷하게 한 가지로만 설명되기보다, 생활리듬/식사패턴/컨디션이 함께 영향을 주는 경우가 많아요. 상담에서 우선순위를 같이 정리하면 훨씬 쉬워집니다.</div>`;
     }
 
-    const strongLayerNames = showLayers.map(x => `${layerCopy[x.k].name}(${x.v}/4)`).join(", ") || "뚜렷한 단일 레이어 없음";
-    const resultSummary = `${main.title} / 레이어: ${strongLayerNames}`;
+    // 상담용 복사 텍스트
+    const strongLayerNames =
+      showLayers.map(x => `${LAYER_COPY[x.k].name.replace(/^[^ ]+ /,'')}(${x.v}/4)`).join(", ") || "뚜렷한 단일 레이어 없음";
+    const resultSummary = `${copy.title.replace(/^.+ /,'')} / 참고: ${strongLayerNames}`;
 
     copyText.value =
 `[무료 체크 결과 기반 상담 요청]
@@ -467,9 +622,7 @@
     show(screenQuestions);
   });
 
-  backBtn.addEventListener("click", () => {
-    show(screenInfo);
-  });
+  backBtn.addEventListener("click", () => show(screenInfo));
 
   resultBtn.addEventListener("click", () => {
     if(!allAnswered()){
